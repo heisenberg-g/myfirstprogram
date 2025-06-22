@@ -26,6 +26,7 @@ class CalendarNoteApp(tk.Tk):
         self.load_notes()
 
         self.create_widgets()
+        self.update_calendar_events()
         self.display_notes_for_date(self.selected_date.strftime('%Y-%m-%d'))
 
     def load_notes(self):
@@ -44,11 +45,29 @@ class CalendarNoteApp(tk.Tk):
                 json.dump(self.notes, f, ensure_ascii=False, indent=2)
         except Exception as e:
             messagebox.showerror('保存失败', f'{e}')
+        self.update_calendar_events()
+
+    def update_calendar_events(self):
+        if not hasattr(self, 'calendar'):
+            return
+        self.calendar.calevent_remove('all')
+        self.calendar.tag_config('note', background='orange', foreground='white')
+        for date_str, notes in self.notes.items():
+            if notes:
+                try:
+                    date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+                except ValueError:
+                    continue
+                self.calendar.calevent_create(date_obj, str(len(notes)), 'note')
 
     def create_widgets(self):
         # 顶部小按钮显示日历
         self.calendar_button = ttk.Button(self, text='选择日期', command=self.toggle_calendar)
         self.calendar_button.pack(pady=5)
+
+        # 当前日期简易显示
+        self.date_label = ttk.Label(self, text=self.selected_date.strftime('%m/%d/%Y'))
+        self.date_label.pack()
 
         # 日历（默认隐藏）
         self.calendar_frame = tk.Frame(self)
@@ -60,6 +79,12 @@ class CalendarNoteApp(tk.Tk):
         # 笔记输入区域
         self.notes_frame = tk.Frame(self)
         self.notes_frame.pack(fill='both', expand=True)
+        # 笔记以标签页形式展示
+        self.notebook = ttk.Notebook(self.notes_frame)
+        self.notebook.pack(fill='both', expand=True)
+
+        self.add_note_btn = ttk.Button(self.notes_frame, text='新建笔记', command=lambda: self.add_note_tab())
+        self.add_note_btn.pack(pady=5)
 
     def toggle_calendar(self):
         if self.calendar_visible:
@@ -76,32 +101,37 @@ class CalendarNoteApp(tk.Tk):
         self.toggle_calendar()  # 自动关闭日历
 
     def display_notes_for_date(self, date_str):
-        for widget in self.notes_frame.winfo_children():
-            widget.destroy()
+        for tab in self.notebook.tabs():
+            self.notebook.forget(tab)
 
         self.entry_widgets = []
 
         date_notes = self.notes.get(date_str, [])
-        for note in date_notes:
-            self.add_note_entry(note.get('tag', TAGS[0]), note.get('content', ''))
+        if date_notes:
+            for note in date_notes:
+                self.add_note_tab(note.get('tag', TAGS[0]), note.get('content', ''))
+        else:
+            self.add_note_tab()
 
-        # 默认添加一个空笔记（可选）
-        self.add_note_entry()
+        # 更新日期显示
+        self.date_label.config(text=self.selected_date.strftime('%m/%d/%Y'))
 
-    def add_note_entry(self, tag='', content=''):
-        frame = tk.Frame(self.notes_frame, pady=5)
-        frame.pack(fill='x', padx=10)
+    def add_note_tab(self, tag='', content=''):
+        frame = tk.Frame(self.notebook, pady=5)
 
         tag_var = tk.StringVar(value=tag if tag else TAGS[0])
         tag_dropdown = ttk.Combobox(frame, textvariable=tag_var, values=TAGS, width=10)
-        tag_dropdown.pack(side='left')
+        tag_dropdown.pack(side='top', anchor='w', padx=5, pady=2)
 
-        text = tk.Text(frame, height=3, width=60)
+        text = tk.Text(frame, height=10)
         text.insert('1.0', content)
-        text.pack(side='left', padx=5)
+        text.pack(fill='both', expand=True, padx=5, pady=5)
         text.bind('<FocusOut>', lambda e: self.auto_save())
 
         self.entry_widgets.append((tag_var, text))
+        index = len(self.entry_widgets)
+        self.notebook.add(frame, text=f'笔记{index}')
+        self.notebook.select(frame)
 
     def auto_save(self):
         date_str = self.selected_date.strftime('%Y-%m-%d')
