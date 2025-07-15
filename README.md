@@ -21,3 +21,14 @@ python3 calendar_notes.py
 ```
 
 程序启动后会在顶部显示当前日期，点击 **选择日期** 按钮可弹出日历。日历中每个有笔记的日期下方都会显示带颜色的数字提示。选择日期后在下方的标签页中编辑笔记即可，内容会自动保存，无需额外的保存按钮。
+
+## 打包为 EXE
+
+通过 `PyInstaller` 可以将该程序打包为 Windows 可执行文件：
+
+```bash
+pip install pyinstaller
+pyinstaller --onefile -w calendar_notes.py
+```
+
+生成的 `dist/calendar_notes.exe` 即可双击运行。
