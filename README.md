@@ -16,8 +16,11 @@ pip install tkcalendar
 
 ## 运行
 
+在安装好依赖后，脚本即可直接启动。建议先为文件添加可执行权限：
+
 ```bash
-python3 calendar_notes.py
+chmod +x calendar_notes.py
+./calendar_notes.py
 ```
 
 程序启动后会在顶部显示当前日期，点击 **选择日期** 按钮可弹出日历。日历中每个有笔记的日期下方都会显示带颜色的数字提示。选择日期后在下方的标签页中编辑笔记即可，内容会自动保存，无需额外的保存按钮。
